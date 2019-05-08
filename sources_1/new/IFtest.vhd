@@ -204,7 +204,7 @@ begin
         if en ='1' then
             pc_ex<=pc_id;
             rt_ex<=instruction_id(9 downto 7);
-            rt_ex<=instruction_id(6 downto 4);
+            rd_ex<=instruction_id(6 downto 4);
             func_ex<=func;
             extImm_ex<=extImm;
             rd1_ex<=rd1;
@@ -243,7 +243,7 @@ begin
     if clk='1' and clk'event then
         if en ='1' then
             wb_wb<=wb_mem;
-            aluRes_wb<=aluRes_mem;
+            aluRes_wb<=aluReso;
             readData_wb<=dataOut;
             wAdd_wb<=wAdd_mem;
         end if;
@@ -264,6 +264,7 @@ begin
         led(8)<=blz;
         led(9)<=zero;
         led(10)<=neg;
+        led(15)<=wb_wb(0);
     else
         led(2 downto 0)<=aluOp;
         led(3)<='0';
@@ -274,6 +275,7 @@ begin
         led(8)<='0';
         led(9)<='0';
         led(10)<='0';
+        led(15)<='0';
     end if;
 end process;
 
@@ -306,9 +308,9 @@ begin
     when "000" => result<=instr;
     when "001" => result<=pc;
     when "010" => result<=rd1;
-    when "011" => result<=rd2;
+    when "011" => result<="0000000000000"&wAdd_wb;
     when "100" => result<=extImm;
-    when "101" => result<=aluReso;
+    when "101" => result<=aluRes_wb;
     when "110" => result<=readData_wb;
     when others => result<=wd;
     end case;
