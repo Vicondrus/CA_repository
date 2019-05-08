@@ -35,10 +35,11 @@ end RAM;
 architecture syn of RAM is
  type ram_type is array (0 to 255) of std_logic_vector (15 downto 0);
  signal RAM: ram_type := (
- x"00AA",
- x"00BB",
- x"00CC",
- x"00DD",
+ x"0000",
+ x"0005",
+ x"0002",
+ x"0005",
+ x"0004",
  others=>x"FFFF");
 begin
  process (clk)

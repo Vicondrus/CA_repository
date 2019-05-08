@@ -282,7 +282,7 @@ deb2: debouncer port map (btn=>btn2,clk=>clk,enable=>res);
 deb3: debouncer port map (btn=>btn3,clk=>clk,enable=>regEn);
 deb4: debouncer port map (btn=>btn4,clk=>clk,enable=>memEn);
 ifu: instructionFetch port map (clk=>clk,en=>en,res=>res,brncAdd=>brncAddr_mem,jmpAdd=>jmpAdd,jmp=>jmp,PCSrc=>pcSrc,instruction=>instr,pcIncr=>pc);
-idu: instructionDeocde port map (writeAdd=>wAdd_wb,regWrite=>wb_wb(1),instr=>instruction_id,regDst=>regSrc,extOp=>extOp,rd1=>rd1,rd2=>rd2,wd=>wd,clk=>clk,extImm=>extImm,func=>func,sa=>sa);
+idu: instructionDeocde port map (writeAdd=>wAdd_wb,regWrite=>wb_wb(0),instr=>instruction_id,regDst=>regSrc,extOp=>extOp,rd1=>rd1,rd2=>rd2,wd=>wd,clk=>clk,extImm=>extImm,func=>func,sa=>sa);
 
 control: controlUnit port map (instr=>instruction_id(15 downto 13),regSrc=>regSrc,beq=>beq,mWrite=>mWrite,memReg=>memReg,extOp=>extOp,aluOp=>aluOp,jmp=>jmp,WE=>WE,aluSrc=>aluSrc,blz=>blz);
 
@@ -309,7 +309,7 @@ begin
     when "011" => result<=rd2;
     when "100" => result<=extImm;
     when "101" => result<=aluReso;
-    when "110" => result<=dataOut;
+    when "110" => result<=readData_wb;
     when others => result<=wd;
     end case;
 end process;
