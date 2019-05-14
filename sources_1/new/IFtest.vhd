@@ -34,8 +34,10 @@ use IEEE.STD_LOGIC_arith.ALL;
 --use UNISIM.VComponents.all;
 
 entity IFtest is
-    Port ( btn1 : in STD_LOGIC;
-            clk: in std_logic;
+    Port ( rx_in : in std_logic;
+           tx_out : out std_logic;
+           btn1 : in STD_LOGIC;
+           clk: in std_logic;
            btn2 : in STD_LOGIC;
            btn3: in std_logic;
            btn4: in std_logic;
