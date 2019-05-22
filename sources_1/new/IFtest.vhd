@@ -130,6 +130,36 @@ component exUnit is
            aluRes : out STD_LOGIC_VECTOR (15 downto 0));
 end component;
 
+component txFsm is
+    Port ( clk : in STD_LOGIC;
+           rst : in STD_LOGIC;
+           baudEn : in STD_LOGIC;
+           txData : in STD_LOGIC_VECTOR(7 downto 0);
+           txEn:in std_logic;
+           txRdy : out STD_LOGIC;
+           tx : out STD_LOGIC);
+end component;
+
+type alpha_rom is array (0 to 15) of std_logic_vector (7 downto 0);
+signal alphaDecode: alpha_rom := (
+x"30",
+x"31",
+x"32",
+x"33",
+x"34",
+x"35",
+x"36",
+x"37",
+x"38",
+x"39",
+x"41",
+x"42",
+x"43",
+x"44",
+x"45",
+x"46"
+);
+
 signal en: std_logic;
 signal res: std_logic;
 signal result: std_logic_vector(15 downto 0);
@@ -188,7 +218,92 @@ signal aluRes_wb: std_logic_vector(15 downto 0);
 signal readData_wb: std_logic_vector(15 downto 0);
 signal wb_wb: std_logic_vector(1 downto 0);
 
+signal baudEn, txEn: std_logic;
+signal count: std_logic_vector(13 downto 0);
+signal txTransEn, txRdy: std_logic := '0';
+signal startAux: std_logic;
+signal txReg: std_logic_vector(15 downto 0);
+signal txWrite: std_logic_vector(7 downto 0);
+signal txAux: std_logic_vector (2 downto 0);
+signal rstAux: std_logic;
+
 begin
+
+fsm: txFsm port map (txData=>txWrite,txEn=>txEn,rst=>'0',baudEn=>baudEn,clk=>clk,tx=>tx_out, txRdy=>txRdy);
+
+--process(clk,en)
+--begin
+--    if clk = '1' and clk'event
+--    then
+--       if en = '1' then
+--            txWrite<=alphaDecode(conv_integer(pc(3 downto 0)));
+--       end if;
+--    end if;
+--end process;
+
+process(clk,en)
+begin
+    if clk = '1' and clk'event
+    then
+       if en = '1' then
+            txReg<=instr;
+            startAux<='1';
+       else
+           startAux<='0';
+       end if;
+    end if;
+end process;
+
+process(txRdy, startAux)
+begin
+    
+    if startAux = '1' then
+        led(13)<='1';
+        if txRdy='1' then
+            if txAux < 4 then
+                led(11)<='1';
+                txWrite<=alphaDecode(conv_integer(txReg((conv_integer(txAux)*4 + 3) downto conv_integer(txAux)*4)));
+                txAux <= txAux+1;
+                txTransEn <= '1';
+            else
+                led(11)<='0';
+                txTransEn <= '0';
+                --startAux<='0';
+                txAux<="000";
+            end if;
+        end if;
+    else
+        led(13)<='0';
+    end if;
+end process;
+
+dff: process(clk, bauden, txTransEn)
+begin
+       if clk='1' and clk'event then
+        if txTransEn='1' then 
+            led(12)<='1';
+            txEn<='1'; 
+        else
+            led(12)<='0';
+        end if;
+        if bauden='1' then 
+            txEn<='0';
+        end if;
+       end if;
+end process dff;
+
+process(clk)
+begin
+if clk='1' and clk'event then
+    if count="10100010110000" then 
+        bauden<='1';
+            count<="00000000000000";
+       else 
+        bauden<='0';
+        count<=count+1;
+       end if;
+end if;
+end process;
 
 id_reg: process(clk)
 begin
@@ -267,6 +382,7 @@ begin
         led(9)<=zero;
         led(10)<=neg;
         led(15)<=wb_wb(0);
+        led(14)<=txRdy;
     else
         led(2 downto 0)<=aluOp;
         led(3)<='0';
@@ -278,12 +394,13 @@ begin
         led(9)<='0';
         led(10)<='0';
         led(15)<='0';
+        led(14)<='0';
     end if;
 end process;
 
 deb1: debouncer port map (btn=>btn1,clk=>clk,enable=>en);
 deb2: debouncer port map (btn=>btn2,clk=>clk,enable=>res);
-deb3: debouncer port map (btn=>btn3,clk=>clk,enable=>regEn);
+deb3: debouncer port map (btn=>btn3,clk=>clk);
 deb4: debouncer port map (btn=>btn4,clk=>clk,enable=>memEn);
 ifu: instructionFetch port map (clk=>clk,en=>en,res=>res,brncAdd=>brncAddr_mem,jmpAdd=>jmpAdd,jmp=>jmp,PCSrc=>pcSrc,instruction=>instr,pcIncr=>pc);
 idu: instructionDeocde port map (writeAdd=>wAdd_wb,regWrite=>wb_wb(0),instr=>instruction_id,regDst=>regSrc,extOp=>extOp,rd1=>rd1,rd2=>rd2,wd=>wd,clk=>clk,extImm=>extImm,func=>func,sa=>sa);

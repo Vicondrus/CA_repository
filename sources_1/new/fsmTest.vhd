@@ -83,12 +83,11 @@ begin
        end if;
 end process dff;
 
- --baud rate generator pt transmisie 
 process(clk)
 begin
 if clk='1' and clk'event then
-    if count="10100010110000" --10416 tacti:28B0
-       then bauden<='1';
+    if count="10100010110000" then 
+        bauden<='1';
             count<="00000000000000";
        else 
         bauden<='0';

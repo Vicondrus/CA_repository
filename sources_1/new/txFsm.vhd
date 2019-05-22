@@ -9,7 +9,7 @@ entity txFsm is
            rst : in STD_LOGIC;
            baudEn : in STD_LOGIC;
            txData : in STD_LOGIC_VECTOR(7 downto 0);
-           txEn:in std_logic;
+           txEn: in std_logic;
            txRdy : out STD_LOGIC;
            tx : out STD_LOGIC);
 end txFsm;
@@ -21,7 +21,7 @@ signal state : state_type;
 signal bit_cnt:std_logic_vector(2 downto 0);    
 begin
 
-    process1:process (clk,rst,txEn)
+process1:process (clk,rst,txEn)
 begin
     if (rst ='1') then
            state <=idle;
@@ -36,14 +36,15 @@ begin
                        end if;
                       
             when start => state <= bitt; 
+            
             when bitt =>  if (bit_cnt < "111") then
                                           state <= bitt;
                                           bit_cnt <= bit_cnt+1;
                                    else
                                           state <= stop;
                                    end if;
-            when stop =>  state <= idle;
-            
+                                   
+            when stop =>  state <= idle;     
         end case;
         end if;
     end if;
