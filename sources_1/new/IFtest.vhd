@@ -99,6 +99,15 @@ component instructionDeocde is
            sa : out STD_LOGIC);
 end component;
 
+component rxFsm is
+    Port ( rxRdy : out STD_LOGIC;
+           rxData : out STD_LOGIC_VECTOR (7 downto 0);
+           baudEn : in STD_LOGIC;
+           rst : in STD_LOGIC;
+           clk : in STD_LOGIC;
+           rx : in STD_LOGIC);
+end component;
+
 component debouncer is
     Port ( btn : in STD_LOGIC;
            clk : in STD_LOGIC;
@@ -160,6 +169,8 @@ x"45",
 x"46"
 );
 
+signal decoded: std_logic_vector(7 downto 0);
+signal compReceived: std_logic_vector(7 downto 0);
 signal en: std_logic;
 signal res: std_logic;
 signal result: std_logic_vector(15 downto 0);
@@ -227,6 +238,11 @@ signal txWrite: std_logic_vector(7 downto 0);
 signal txAux: std_logic_vector (2 downto 0);
 signal rstAux: std_logic;
 
+signal counter: std_logic_vector(9 downto 0);
+signal baudEnRx, rxRdy: std_logic;
+signal q: std_logic_vector(2 downto 0);
+signal rxReg: std_logic_vector(15 downto 0);
+
 begin
 
 fsm: txFsm port map (txData=>txWrite,txEn=>txEn,rst=>'0',baudEn=>baudEn,clk=>clk,tx=>tx_out, txRdy=>txRdy);
@@ -240,6 +256,43 @@ fsm: txFsm port map (txData=>txWrite,txEn=>txEn,rst=>'0',baudEn=>baudEn,clk=>clk
 --       end if;
 --    end if;
 --end process;
+
+decodeAscii: process(compReceived)
+begin
+    if compReceived >= 48 and compReceived <= 57 then
+        decoded<=compReceived-48;
+    elsif compReceived >=65 and compReceived <= 70 then
+        decoded<=compReceived-65+10;
+    end if;
+end process decodeAscii;
+
+process(clk)
+begin
+if clk='1' and clk'event then
+    counter <= counter+1;
+    if counter = "1010001011" then
+        counter<="0000000000";
+        baudEnRx<='1';
+    else
+        baudEnRx<='0';
+    end if;
+end if;
+end process;
+
+fsmRx: rxFsm port map (rxRdy=>rxRdy,rxData=>compReceived,baudEn=>baudEnRx,rst=>'0',clk=>clk,rx=>rx_in);
+
+process(rxRdy,rx_in)
+begin
+    if rxRdy='1' then
+       -- if rx_in='1' then
+            rxReg(conv_integer(q)*4 + 3 downto conv_integer(q)*4)<=decoded(3 downto 0);
+            q<=q+1;
+            if q="100" then
+                q<="000";
+        --    end if;
+        end if;
+    end if;
+end process;
 
 process(clk,en)
 begin
@@ -426,7 +479,7 @@ begin
     case sw(7 downto 5) is
     when "000" => result<=instr;
     when "001" => result<=pc;
-    when "010" => result<=rd1;
+    when "010" => result<=rxReg;
     when "011" => result<="0000000000000"&wAdd_wb;
     when "100" => result<=extImm;
     when "101" => result<=aluRes_wb;
